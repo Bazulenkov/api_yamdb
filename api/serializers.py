@@ -6,8 +6,6 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # user = serializers.ReadOnlyField(source='user.username')
-    # following = serializers.ReadOnlyField(source='following.username')
 
     class Meta:
         fields = ('first_name', 'last_name', 'username', 'bio', 'email', 'role')

@@ -1,19 +1,17 @@
 import random
 
-from rest_framework.decorators import api_view
-from rest_framework.serializers import ValidationError
-from rest_framework.response import Response
-from rest_framework.generics import get_object_or_404
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as VE
 from django.core.mail import send_mail
 from django.core.validators import validate_email
-from django.core.exceptions import ValidationError as VE
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import RetrieveUpdateAPIView, get_object_or_404
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .permissions import IsAdmin, IsModerator
 from .serializers import UserSerializer
 
 
@@ -29,6 +27,7 @@ def get_confirmation_code():
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def generate_confirmation_code(request):
     email = request.data.get('email')
     if email is None:
@@ -58,10 +57,11 @@ def generate_confirmation_code(request):
         'Письмо с кодом подтверждения для доступа на YamDB', 
         confirmation_code, 'admin@yamdb.fake', [email]
     )
-    return Response({"email": email})
+    return Response({'email': email})
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def get_tokens_for_user(request):
     email = request.data.get('email')
     confirmation_code = request.data.get('confirmation_code')
@@ -74,22 +74,19 @@ def get_tokens_for_user(request):
         }
     )
 
-class UserViewSet(viewsets.ModelViewSet):
+
+class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'username'
 
-    @action(
-        methods=['get', 'patch',], 
-        detail=True, permission_classes=[IsAuthenticated]
-    )
-    def me(self, request):
-        user = request.user
-        if request.method == 'GET':
-            serializer = UserSerializer(user)
-            return Response(serializer.data)
-        if request.method == 'PATCH':
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid(raise_exception=True):
-                return Response(serializer.validated_data)
+
+class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+    

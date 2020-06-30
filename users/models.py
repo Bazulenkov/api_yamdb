@@ -3,15 +3,16 @@ from django.contrib.auth.models import AbstractUser
 
 
 ROLE = (
-    ('u', 'user'),
-    ('m', 'moderator'),
-    ('a', 'admin'),
+    ('user', 'user'),
+    ('moderator', 'moderator'),
+    ('admin', 'admin'),
 )
 
 
 class YamUser(AbstractUser):
+    email = models.EmailField(unique=True)
     bio = models.TextField(blank=True, null=True)
-    role = models.CharField(max_length=1, choices=ROLE, default='u')
+    role = models.CharField(max_length=9, choices=ROLE, default='user')
     confirmation_code = models.CharField(max_length=10, blank=True, null=True)
 
     class Meta(AbstractUser.Meta):

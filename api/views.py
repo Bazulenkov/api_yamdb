@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import ModelViewSet
 
@@ -12,6 +13,11 @@ class ReviewViewSet(ModelViewSet):
         title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
         return title.reviews.all()
 
+    def set_title_rating(self, title_id):
+        title = get_object_or_404(id=title_id)
+        title.rating = self.queryset.aggregate(Avg("score"))
+        title.save()
+
     def perform_create(self, serializer):
         title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
         # проверка, чтобы не вылетало исключения, если rewview на title уже существует
@@ -23,6 +29,15 @@ class ReviewViewSet(ModelViewSet):
 
         # проверка, чтобы score был 1..10 - надо дописывать или будет автоматом из-за ограничения в сериализаторе?
         serializer.save(title=title, author=self.request.user)
+        self.set_title_rating(self.kwargs.get("title_id"))
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        self.set_title_rating(self.kwargs.get("title_id"))
+
+    def perform_update(self, serializer):
+        serializer.save()
+        self.set_title_rating(self.kwargs.get("title_id"))
 
 
 class CommentViewSet(ModelViewSet):

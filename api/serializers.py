@@ -5,10 +5,12 @@ from .models import Review, Comment
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField()
+    score = serializers.IntegerField(max_value=10, min_value=1)
 
     class Meta:
         model = Review
-        fields = "__all__"
+        fields = ["id", "text", "author", "score", "pub_date"]
+        read_only_fields = ["title"]
 
 
 class Comment(serializers.ModelSerializer):
@@ -16,4 +18,6 @@ class Comment(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = "__all__"
+        fields = ["id", "text", "author", "pub_date"]
+        read_only_fields = ["title", "review"]
+

@@ -9,5 +9,5 @@ User = get_user_model()
 @admin.register(User)
 class YamUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
-        ('Custom fields', {'fields': ('bio', 'role', 'confirmation_code')}),
+        ("Custom fields", {"fields": ("bio", "role")}),
     )

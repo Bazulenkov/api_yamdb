@@ -18,12 +18,12 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=200)
     year = models.PositiveSmallIntegerField()
     description = models.CharField(max_length=200)
-    rating = models.PositiveSmallIntegerField(default=0)
+    rating = models.FloatField(default=None, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="titles")
-    genres = models.ManyToManyField(Genre, through="GenreTitle", related_name="titles")
+    genre = models.ManyToManyField(Genre, through="GenreTitle", related_name="titles")
 
     def __str__(self):
         return self.name

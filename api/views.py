@@ -164,7 +164,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def set_title_rating(self, title_id):
         title = generics.get_object_or_404(Title, id=title_id)
-        title.rating = self.get_queryset().aggregate(Avg("score"))
+        title.rating = (
+            self.get_queryset().aggregate(Avg("score")).get("score__avg")
+        )
         title.save()
 
     def perform_create(self, serializer):
@@ -195,10 +197,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        if not Title.objects.get(id=self.kwargs.get("title_id")).exists():
-            raise NotFound(detail=_("Title not found"), code=404)
-
-        # title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
         review = generics.get_object_or_404(
             Review,
             id=self.kwargs.get("review_id"),
@@ -207,12 +205,9 @@ class CommentViewSet(viewsets.ModelViewSet):
         return review.comments.all()
 
     def perform_create(self, serializer):
-        title = generics.get_object_or_404(
-            Title, id=self.kwargs.get("title_id")
-        )
         review = generics.get_object_or_404(
             Review,
             id=self.kwargs.get("review_id"),
             title__id=self.kwargs.get("title_id"),
         )
-        serializer.save(title=title, review=review, author=self.request.user)
+        serializer.save(review=review, author=self.request.user)

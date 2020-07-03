@@ -23,7 +23,7 @@ class Genre(models.Model):
 class Title(models.Model):
     name = models.CharField(max_length=200)
     year = models.PositiveSmallIntegerField()
-    description = models.CharField(max_length=200)
+    description = models.CharField(max_length=200, blank=True)
     rating = models.FloatField(default=None, null=True, blank=True)
     category = models.ForeignKey(
         Category, on_delete=models.PROTECT, related_name="titles"
@@ -67,9 +67,6 @@ class Review(models.Model):
 class Comment(models.Model):
     """ Модель комментариев к отзывам. Комментарий привязан к определённому отзыву. """
 
-    title = models.ForeignKey(
-        "Title", on_delete=models.CASCADE, related_name="comments"
-    )
     review = models.ForeignKey(
         "Review", on_delete=models.CASCADE, related_name="comments"
     )

@@ -110,7 +110,7 @@ class TitleViewset(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     filterset_class = TitleFilter
-    filter_backends = [DjangoFilterBackend, ]
+    #filter_backends = [DjangoFilterBackend, ]
     ordering_fields = ["name"]
 
     def perform_create(self, serializer):

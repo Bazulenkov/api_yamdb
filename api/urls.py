@@ -9,8 +9,8 @@ router.register("titles", TitleViewset)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('categories/', CategoriesList.as_view()),
-    path('categories/<slug>/', CategoryDestroy.as_view()),
-    path('genres/', GenresList.as_view()),
-    path("genres/<slug>/", GenreDestroy.as_view()),
+    path("categories/", CategoriesList.as_view(), name="list_categories"),
+    path("categories/<slug>/", CategoryDestroy.as_view(), name="destroy_category"),
+    path("genres/", GenresList.as_view(), name="list_genres"),
+    path("genres/<slug>/", GenreDestroy.as_view(), name="destroy_genre"),
 ]

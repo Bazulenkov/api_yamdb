@@ -45,10 +45,11 @@ class TitleViewset(viewsets.ModelViewSet):
         serializer.save(category=category, genre=genre)
 
     def perform_update(self, serializer):
-        title = generics.get_object_or_404(Title, id=self.kwargs.get("pk"))
+        title = self.get_object()
         category = generics.get_object_or_404(Category, slug=self.request.data.get("category"))
         genre = Genre.objects.filter(slug__in=self.request.data.getlist("genre"))
-        title.category = category
         title.genre.set(genre)
-        title.save()
         serializer.save()
+        title.category = category
+        #title.save()
+        #serializer.save()

@@ -175,7 +175,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         )
         # проверка, чтобы не вылетало исключения, если rewview на title уже существует
         if title.reviews.filter(author=self.request.user).exists():
-            raise serializers.ValidationError(
+            raise ValidationError(
                 "Отзыв от Вас на это произведение уже существует. Пользователь может оставить только один отзыв на один объект.",
                 code=400,
             )

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as VE
@@ -11,8 +10,10 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .filters import TitleFilter
+from .models import Category, Genre, Title
 from .permissions import IsAdmin
-from .serializers import UserForAdminSerializer, UserSerializer
+from .serializers import UserForAdminSerializer, UserSerializer, CategorySerializer, GenreSerializer, TitleSerializer
 
 
 User = get_user_model()
@@ -77,13 +78,6 @@ class UserRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
-=======
-from rest_framework import generics, filters, viewsets
-from django_filters.rest_framework import DjangoFilterBackend
-
-from .filters import TitleFilter
-from .models import Category, Genre, Title
-from .serializers import CategorySerializer, GenreSerializer, TitleSerializer
 
 
 class CategoriesList(generics.ListCreateAPIView):
@@ -133,4 +127,3 @@ class TitleViewset(viewsets.ModelViewSet):
         title.category = category
         #title.save()
         #serializer.save()
->>>>>>> develop/titles-categories-genres/konstantin

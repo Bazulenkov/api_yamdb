@@ -145,7 +145,6 @@ class TitleViewset(viewsets.ModelViewSet):
         serializer.save(category=category, genre=genre)
 
     def perform_update(self, serializer):
-        title = self.get_object()
         category = generics.get_object_or_404(
             Category, slug=self.request.data.get("category")
         )

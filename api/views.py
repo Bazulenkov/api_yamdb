@@ -167,13 +167,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
         )
         return title.reviews.all()
 
-    def set_title_rating(self, title_id):
-        title = generics.get_object_or_404(Title, id=title_id)
-        title.rating = (
-            self.get_queryset().aggregate(Avg("score")).get("score__avg")
-        )
-        title.save()
-
     def perform_create(self, serializer):
         title = generics.get_object_or_404(
             Title, id=self.kwargs.get("title_id")
@@ -187,15 +180,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         # проверка, чтобы score был 1..10 - надо дописывать или будет автоматом из-за ограничения в сериализаторе?
         serializer.save(title=title, author=self.request.user)
-        self.set_title_rating(self.kwargs.get("title_id"))
-
-    def perform_destroy(self, instance):
-        instance.delete()
-        self.set_title_rating(self.kwargs.get("title_id"))
-
-    def perform_update(self, serializer):
-        serializer.save()
-        self.set_title_rating(self.kwargs.get("title_id"))
 
 
 class CommentViewSet(viewsets.ModelViewSet):

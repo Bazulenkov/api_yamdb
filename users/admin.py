@@ -11,3 +11,4 @@ class YamUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ("Custom fields", {"fields": ("bio", "role")}),
     )
+    list_display = UserAdmin.list_display + ("role",)

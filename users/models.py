@@ -13,6 +13,3 @@ class YamUser(AbstractUser):
     email = models.EmailField(unique=True)
     bio = models.TextField(blank=True)
     role = models.CharField(max_length=9, choices=ROLE, default="user")
-
-    class Meta(AbstractUser.Meta):
-        pass

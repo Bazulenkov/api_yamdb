@@ -13,7 +13,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.filters import TitleFilter
 from api.models import Category, Genre, Title, Review, Comment
-from api.permissions import IsAdmin
+from api.permissions import (
+    IsAdminRole,
+    CategoryPermission,
+    ReviewCommentPermission,
+)
 from api.serializers import (
     UserForAdminSerializer,
     UserSerializer,
@@ -38,9 +42,7 @@ def generate_confirmation_code(request):
     except VE:
         raise ValidationError({"email": "Enter a valid email address."})
     username = email.split("@")[0]
-    user = User.objects.filter(username=username).first()
-    if not user:
-        user = User.objects.create_user(username=username, email=email,)
+    user = User.objects.get_or_create(username=username, email=email)
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         "Письмо с кодом подтверждения для доступа на YamDB",
@@ -72,7 +74,7 @@ def get_tokens_for_user(request):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserForAdminSerializer
-    permission_classes = [IsAuthenticated]  # , IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdminRole]
     lookup_field = "username"
     filter_backends = [filters.SearchFilter]
     search_fields = [
@@ -91,6 +93,7 @@ class UserRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 class CategoriesList(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = [CategoryPermission]
     filter_backends = [
         filters.SearchFilter,
     ]
@@ -102,6 +105,7 @@ class CategoriesList(generics.ListCreateAPIView):
 class CategoryDestroy(generics.DestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = [CategoryPermission]
     lookup_field = "slug"
 
 
@@ -155,6 +159,7 @@ class TitleViewset(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
+    permission_classes = [ReviewCommentPermission]
 
     def get_queryset(self):
         title = generics.get_object_or_404(
@@ -195,6 +200,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = [ReviewCommentPermission]
 
     def get_queryset(self):
         review = generics.get_object_or_404(

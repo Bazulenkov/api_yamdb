@@ -3,8 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as VE
 from django.core.mail import send_mail
 from django.core.validators import validate_email
-from django.db.models import Avg
-from rest_framework import filters, generics, status, viewsets
+from rest_framework import filters, generics, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -14,9 +13,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from api.filters import TitleFilter
 from api.models import Category, Genre, Title, Review, Comment
 from api.permissions import (
+    IsAdminOrReadOnly,
     IsAdminRole,
-    CategoryPermission,
-    ReviewCommentPermission,
+    IsStaffOrOwnerOrReadOnly,
 )
 from api.serializers import (
     UserForAdminSerializer,
@@ -74,7 +73,7 @@ def get_tokens_for_user(request):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserForAdminSerializer
-    permission_classes = [IsAuthenticated, IsAdminRole]
+    permission_classes = [IsAdminRole]
     lookup_field = "username"
     filter_backends = [filters.SearchFilter]
     search_fields = [
@@ -85,6 +84,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class UserRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
@@ -93,7 +93,7 @@ class UserRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
 class CategoriesList(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [CategoryPermission]
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [
         filters.SearchFilter,
     ]
@@ -105,13 +105,14 @@ class CategoriesList(generics.ListCreateAPIView):
 class CategoryDestroy(generics.DestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [CategoryPermission]
+    permission_classes = [IsAdminRole]
     lookup_field = "slug"
 
 
 class GenresList(generics.ListCreateAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [
         filters.SearchFilter,
     ]
@@ -123,6 +124,7 @@ class GenresList(generics.ListCreateAPIView):
 class GenreDestroy(generics.DestroyAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = [IsAdminRole]
     lookup_field = "slug"
 
 
@@ -130,7 +132,7 @@ class TitleViewset(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     filterset_class = TitleFilter
-    # filter_backends = [DjangoFilterBackend, ]
+    permission_classes = [IsAdminOrReadOnly]
     ordering_fields = ["name"]
 
     def perform_create(self, serializer):
@@ -150,16 +152,12 @@ class TitleViewset(viewsets.ModelViewSet):
         genre = Genre.objects.filter(
             slug__in=self.request.data.getlist("genre")
         )
-        title.genre.set(genre)
-        serializer.save()
-        title.category = category
-        # title.save()
-        # serializer.save()
+        serializer.save(category=category, genre=genre)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [ReviewCommentPermission]
+    permission_classes = [IsStaffOrOwnerOrReadOnly]
 
     def get_queryset(self):
         title = generics.get_object_or_404(
@@ -184,7 +182,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [ReviewCommentPermission]
+    permission_classes = [IsStaffOrOwnerOrReadOnly]
 
     def get_queryset(self):
         review = generics.get_object_or_404(

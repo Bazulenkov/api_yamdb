@@ -3,9 +3,9 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as VE
 from django.core.mail import send_mail
 from django.core.validators import validate_email
-from rest_framework import filters, generics, viewsets
+from rest_framework import filters, generics, viewsets, mixins
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -31,7 +31,6 @@ User = get_user_model()
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
 def generate_confirmation_code(request):
     email = request.data.get("email")
     if email is None:
@@ -53,7 +52,6 @@ def generate_confirmation_code(request):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
 def get_tokens_for_user(request):
     email = request.data.get("email")
     confirmation_code = request.data.get("confirmation_code")
@@ -90,42 +88,28 @@ class UserRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
-class CategoriesList(generics.ListCreateAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+class CreateListDestroyViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    lookup_field = "slug"
     permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [
-        filters.SearchFilter,
-    ]
+    filter_backends = [filters.SearchFilter]
     search_fields = [
         "=name",
     ]
 
 
-class CategoryDestroy(generics.DestroyAPIView):
+class CategoryViewSet(CreateListDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAdminRole]
-    lookup_field = "slug"
 
 
-class GenresList(generics.ListCreateAPIView):
+class GenryViewSet(CreateListDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [
-        filters.SearchFilter,
-    ]
-    search_fields = [
-        "=name",
-    ]
-
-
-class GenreDestroy(generics.DestroyAPIView):
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    permission_classes = [IsAdminRole]
-    lookup_field = "slug"
 
 
 class TitleViewset(viewsets.ModelViewSet):
@@ -145,13 +129,7 @@ class TitleViewset(viewsets.ModelViewSet):
         serializer.save(category=category, genre=genre)
 
     def perform_update(self, serializer):
-        category = generics.get_object_or_404(
-            Category, slug=self.request.data.get("category")
-        )
-        genre = Genre.objects.filter(
-            slug__in=self.request.data.getlist("genre")
-        )
-        serializer.save(category=category, genre=genre)
+        self.perform_create(serializer)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

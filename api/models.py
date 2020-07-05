@@ -26,7 +26,7 @@ class Title(models.Model):
     description = models.CharField(max_length=200, blank=True)
     rating = models.FloatField(default=None, null=True, blank=True)
     category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, related_name="titles"
+        Category, on_delete=models.SET_NULL, related_name="titles"
     )
     genre = models.ManyToManyField(
         Genre, through="GenreTitle", related_name="titles"
@@ -37,8 +37,8 @@ class Title(models.Model):
 
 
 class GenreTitle(models.Model):
-    title = models.ForeignKey(Title, on_delete=models.PROTECT)
-    genre = models.ForeignKey(Genre, on_delete=models.PROTECT)
+    title = models.ForeignKey(Title, on_delete=models.SET_NULL)
+    genre = models.ForeignKey(Genre, on_delete=models.SET_NULL)
 
 
 class Review(models.Model):

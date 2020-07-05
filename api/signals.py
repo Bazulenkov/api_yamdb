@@ -6,10 +6,11 @@ from rest_framework import generics
 from api.models import Review, Title
 
 
-@receiver([post_save, post_delete], sender=Review)
-def set_title_rating(sender, **kwargs):
-    title = generics.get_object_or_404(Title, id=kwargs.get('title_id'))
-    title.rating = (
-        title.reviews.aggregate(Avg("score")).get("score__avg")
-    )
-    title.save()
+@receiver(post_save, sender=Review)
+def set_title_rating(sender, instance, **kwargs):
+    print("signal")
+    if score in kwargs.get("update_fields"):
+        title = kwargs.get("instance").title
+        # title = Title.objects.get(id=kwargs.get('title_id')
+        title.rating = title.reviews.aggregate(Avg("score")).get("score__avg")
+        title.save()

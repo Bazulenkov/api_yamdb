@@ -3,20 +3,22 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as VE
 from django.core.mail import send_mail
 from django.core.validators import validate_email
-from rest_framework import filters, generics, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from django.db import IntegrityError
+from rest_framework import filters, generics, status, viewsets
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.filters import TitleFilter
-from api.models import Category, Genre, Title, Review, Comment
+from api.models import Category, Genre, Title, Review
 from api.permissions import (
     IsAdminOrReadOnly,
     IsAdminRole,
     IsStaffOrOwnerOrReadOnly,
 )
+from api.viewsets import ListCreateDestroyViewSet
 from api.serializers import (
     UserForAdminSerializer,
     UserSerializer,
@@ -80,52 +82,22 @@ class UserViewSet(viewsets.ModelViewSet):
         "=username",
     ]
 
-
-class UserRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        return self.request.user
+    @action(methods=["get", "patch"], detail=False, permission_classes=[IsAuthenticated])
+    def me(self, request, pk=None):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CategoriesList(generics.ListCreateAPIView):
+class CategoriesViewset(ListCreateDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [
-        filters.SearchFilter,
-    ]
-    search_fields = [
-        "=name",
-    ]
 
 
-class CategoryDestroy(generics.DestroyAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    permission_classes = [IsAdminRole]
-    lookup_field = "slug"
-
-
-class GenresList(generics.ListCreateAPIView):
+class GenresViewset(ListCreateDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [
-        filters.SearchFilter,
-    ]
-    search_fields = [
-        "=name",
-    ]
-
-
-class GenreDestroy(generics.DestroyAPIView):
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    permission_classes = [IsAdminRole]
-    lookup_field = "slug"
 
 
 class TitleViewset(viewsets.ModelViewSet):
@@ -145,13 +117,7 @@ class TitleViewset(viewsets.ModelViewSet):
         serializer.save(category=category, genre=genre)
 
     def perform_update(self, serializer):
-        category = generics.get_object_or_404(
-            Category, slug=self.request.data.get("category")
-        )
-        genre = Genre.objects.filter(
-            slug__in=self.request.data.getlist("genre")
-        )
-        serializer.save(category=category, genre=genre)
+        self.perform_create(serializer)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -165,18 +131,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title = generics.get_object_or_404(
-            Title, id=self.kwargs.get("title_id")
-        )
-        # проверка, чтобы не вылетало исключения, если rewview на title уже существует
-        if title.reviews.filter(author=self.request.user).exists():
-            raise ValidationError(
-                "Отзыв от Вас на это произведение уже существует. Пользователь может оставить только один отзыв на один объект.",
-                code=400,
+        try:
+            title = generics.get_object_or_404(
+                Title, id=self.kwargs.get("title_id")
             )
-
-        # проверка, чтобы score был 1..10 - надо дописывать или будет автоматом из-за ограничения в сериализаторе?
-        serializer.save(title=title, author=self.request.user)
+            serializer.save(title=title, author=self.request.user)
+        except IntegrityError:
+            raise ValidationError(
+                "Your review on this title is already exists",
+            )
 
 
 class CommentViewSet(viewsets.ModelViewSet):

@@ -8,6 +8,7 @@ User = get_user_model()
 
 
 class UserForAdminSerializer(serializers.ModelSerializer):
+
     class Meta:
         fields = (
             "first_name",

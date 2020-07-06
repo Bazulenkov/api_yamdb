@@ -7,7 +7,7 @@ from api.models import Review
 
 
 @receiver([post_save, post_delete], sender=Review)
-def create_user_report(sender, instance, created=False, **kwargs):
+def set_title_rating(sender, instance, created=False, **kwargs):
     title = instance.title
     title.rating = title.reviews.aggregate(Avg("score")).get("score__avg")
     title.save()

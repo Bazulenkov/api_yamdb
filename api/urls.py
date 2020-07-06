@@ -27,7 +27,7 @@ urlpatterns = [
     path(
         "auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"
     ),
-    path("auth/token/", views.get_tokens_for_user, name="token_obtain_pair"),
+    path("auth/token/", views.get_tokens_for_user, name="get_tokens_for_user"),
     path(
         "auth/email/",
         views.generate_confirmation_code,

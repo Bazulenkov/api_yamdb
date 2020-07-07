@@ -38,8 +38,6 @@ User = get_user_model()
 @api_view(["POST"])
 def generate_confirmation_code(request):
     email = request.data.get("email")
-    cleaner = str.maketrans(dict.fromkeys(string.punctuation))
-    username = email.translate(cleaner).lower()
 
     if email is None:
         raise ValidationError({"email": "This field is required"})
@@ -48,6 +46,9 @@ def generate_confirmation_code(request):
         validate_email(email)
     except VE:
         raise ValidationError({"email": "Enter a valid email address."})
+
+    cleaner = str.maketrans(dict.fromkeys(string.punctuation))
+    username = email.translate(cleaner).lower()
 
     try:
         user = User.objects.create(username=username, email=email)

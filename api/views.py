@@ -39,9 +39,6 @@ User = get_user_model()
 def generate_confirmation_code(request):
     email = request.data.get("email")
 
-    if email is None:
-        raise ValidationError({"email": "This field is required"})
-
     try:
         validate_email(email)
     except VE:

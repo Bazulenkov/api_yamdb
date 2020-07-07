@@ -1,3 +1,4 @@
+import string
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as VE
@@ -36,14 +37,22 @@ User = get_user_model()
 @permission_classes([AllowAny])
 def generate_confirmation_code(request):
     email = request.data.get("email")
+    cleaner = str.maketrans(dict.fromkeys(string.punctuation))
+    username = email.translate(cleaner).lower()
+
     if email is None:
         raise ValidationError({"email": "This field is required"})
+
     try:
         validate_email(email)
     except VE:
         raise ValidationError({"email": "Enter a valid email address."})
-    username = email.split("@")[0]
-    user = User.objects.get_or_create(username=username, email=email)
+
+    try:
+        user = User.objects.create(username=username, email=email)
+    except IntegrityError:
+        raise ValidationError({"email": "User with same email is already exists"})
+
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         "Письмо с кодом подтверждения для доступа на YamDB",
@@ -59,10 +68,13 @@ def generate_confirmation_code(request):
 def get_tokens_for_user(request):
     email = request.data.get("email")
     confirmation_code = request.data.get("confirmation_code")
-    if not confirmation_code:
-        raise ValidationError({"confirmation_code": "This field is required"})
+
+    if not confirmation_code or not email:
+        raise ValidationError({"detail": "confirmation_code and email are required"})
+
     user = generics.get_object_or_404(User, email=email)
     context = {"confirmation_code": "Enter a valid confirmation code"}
+
     if default_token_generator.check_token(user=user, token=confirmation_code):
         refresh = RefreshToken.for_user(user)
         context = {
@@ -84,9 +96,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(methods=["get", "patch"], detail=False, permission_classes=[IsAuthenticated])
     def me(self, request, pk=None):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        if request.method == "PATCH":
+            serializer = UserSerializer(request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        else:
+            serializer = UserSerializer(request.user)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -137,8 +154,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
             )
             serializer.save(title=title, author=self.request.user)
         except IntegrityError:
-            raise ValidationError(
-                "Your review on this title is already exists",
+            raise ValidationError({"detail": "Your review on this title is already exists"}
             )
 
 

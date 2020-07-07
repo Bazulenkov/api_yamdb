@@ -27,24 +27,17 @@ class Title(models.Model):
     description = models.CharField(max_length=200, blank=True)
     rating = models.FloatField(default=None, null=True, blank=True)
     category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, related_name="titles"
+        Category, on_delete=models.SET_NULL, related_name="titles", blank=True, null=True
     )
     genre = models.ManyToManyField(
-        Genre, through="GenreTitle", related_name="titles"
+        Genre, related_name="titles", blank=True
     )
 
     def __str__(self):
         return self.name
 
 
-class GenreTitle(models.Model):
-    title = models.ForeignKey(Title, on_delete=models.PROTECT)
-    genre = models.ForeignKey(Genre, on_delete=models.PROTECT)
-
-
 class Review(models.Model):
-    """ Модель отзывов. Отзыв прявязан к определенному произведению """
-
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name="reviews"
     )
@@ -66,8 +59,6 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    """ Модель комментариев к отзывам. Комментарий привязан к определённому отзыву. """
-
     review = models.ForeignKey(
         "Review", on_delete=models.CASCADE, related_name="comments"
     )

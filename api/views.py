@@ -37,13 +37,14 @@ User = get_user_model()
 
 @api_view(["POST"])
 def generate_confirmation_code(request):
-    email = request.data.get("email").lower()
+    email = request.data.get("email")
 
     try:
         validate_email(email)
     except VE:
         raise ValidationError({"email": "Enter a valid email address."})
-
+    
+    email = email.lower()
     cleaner = str.maketrans(dict.fromkeys(string.punctuation))
     username = email.translate(cleaner)
 

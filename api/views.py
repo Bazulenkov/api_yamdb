@@ -37,7 +37,7 @@ User = get_user_model()
 
 @api_view(["POST"])
 def generate_confirmation_code(request):
-    email = request.data.get("email")
+    email = request.data.get("email").lower()
 
     try:
         validate_email(email)
@@ -45,15 +45,9 @@ def generate_confirmation_code(request):
         raise ValidationError({"email": "Enter a valid email address."})
 
     cleaner = str.maketrans(dict.fromkeys(string.punctuation))
-    username = email.translate(cleaner).lower()
+    username = email.translate(cleaner)
 
-    try:
-        user = User.objects.create(username=username, email=email)
-    except IntegrityError:
-        raise ValidationError(
-            {"email": "User with same email is already exists"}
-        )
-
+    user, created = User.objects.get_or_create(username=username, email=email)
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         "Письмо с кодом подтверждения для доступа на YamDB",

@@ -8,9 +8,9 @@ from . import views
 
 router = DefaultRouter()
 router.register("users", views.UserViewSet)
-router.register("titles", views.TitleViewset)
-router.register("categories", views.CategoryViewSet)
-router.register("genres", views.GenryViewSet)
+router.register("titles", views.TitleViewSet)
+router.register("categories", views.CategoriesViewSet)
+router.register("genres", views.GenresViewSet)
 router.register(
     r"titles/(?P<title_id>\d+)/reviews",
     views.ReviewViewSet,
@@ -21,8 +21,6 @@ router.register(
     views.CommentViewSet,
     basename="comments",
 )
-router.register("categories", views.CategoriesViewset)
-router.register("genres", views.GenresViewset)
 
 urlpatterns = [
     path(

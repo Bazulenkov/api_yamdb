@@ -52,7 +52,9 @@ def generate_confirmation_code(request):
     try:
         user = User.objects.create(username=username, email=email)
     except IntegrityError:
-        raise ValidationError({"email": "User with same email is already exists"})
+        raise ValidationError(
+            {"email": "User with same email is already exists"}
+        )
 
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
@@ -70,7 +72,9 @@ def get_tokens_for_user(request):
     confirmation_code = request.data.get("confirmation_code")
 
     if not confirmation_code or not email:
-        raise ValidationError({"detail": "confirmation_code and email are required"})
+        raise ValidationError(
+            {"detail": "confirmation_code and email are required"}
+        )
 
     user = generics.get_object_or_404(User, email=email)
     context = {"confirmation_code": "Enter a valid confirmation code"}
@@ -94,30 +98,33 @@ class UserViewSet(viewsets.ModelViewSet):
         "=username",
     ]
 
-    @action(methods=["get", "patch"], detail=False, permission_classes=[IsAuthenticated])
+    @action(
+        methods=["get", "patch"],
+        detail=False,
+        permission_classes=[IsAuthenticated],
+    )
     def me(self, request):
-
+        serializer = UserSerializer(request.user)
         if request.method == "PATCH":
-            serializer = UserSerializer(request.user, data=request.data, partial=True)
+            serializer = UserSerializer(
+                request.user, data=request.data, partial=True
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
-        else:
-            serializer = UserSerializer(request.user)
-
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CategoriesViewset(ListCreateDestroyViewSet):
+class CategoriesViewSet(ListCreateDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
-class GenresViewset(ListCreateDestroyViewSet):
+class GenresViewSet(ListCreateDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
-class TitleViewset(viewsets.ModelViewSet):
+class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     filterset_class = TitleFilter

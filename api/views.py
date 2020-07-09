@@ -43,12 +43,14 @@ def generate_confirmation_code(request):
         validate_email(email)
     except VE:
         raise ValidationError({"email": "Enter a valid email address."})
-    
+
     email = email.lower()
     cleaner = str.maketrans(dict.fromkeys(string.punctuation))
     username = email.translate(cleaner)
 
-    user, created = User.objects.get_or_create(username=username, email=email)
+    user, created = User.objects.get_or_create(
+        username=username, email=email, is_active=False
+    )
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         "Письмо с кодом подтверждения для доступа на YamDB",
@@ -73,6 +75,9 @@ def get_tokens_for_user(request):
     context = {"confirmation_code": "Enter a valid confirmation code"}
 
     if default_token_generator.check_token(user=user, token=confirmation_code):
+        user.is_active = True
+        user.save()
+
         refresh = RefreshToken.for_user(user)
         context = {
             "refresh": str(refresh),
